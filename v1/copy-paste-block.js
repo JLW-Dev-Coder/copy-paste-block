@@ -77,5 +77,24 @@
     initAll();
   }
 
-  window.CopyPasteBlock = { init: function (rootEl) { rootEl ? initOne(rootEl) : initAll(); } };
+   window.CopyPasteBlock = { init: function (rootEl) { rootEl ? initOne(rootEl) : initAll(); } };
+
+  // --- Stabilizer: re-init after SuiteDash re-renders ---
+  (function () {
+    function kick(root) {
+      if (window.CopyPasteBlock) window.CopyPasteBlock.init(root || document);
+    }
+    kick();
+    setTimeout(kick, 600);
+    setTimeout(kick, 1500);
+
+    const root = document.querySelector('.copy-paste-block') || document;
+    const mo = new MutationObserver(() => kick(root));
+    mo.observe(root, { childList: true, subtree: true });
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) setTimeout(kick, 300);
+    });
+  })();
+
 })();
