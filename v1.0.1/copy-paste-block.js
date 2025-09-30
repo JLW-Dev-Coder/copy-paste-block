@@ -1,7 +1,8 @@
-/* v1.0.1 – always-enabled button + event delegation */
+/* v1.0.2 – always-enabled button + event delegation + expand Saved Replies */
 (function () {
   "use strict";
 
+  // ---- Existing copy/paste code ----
   function showToast(toastEl, msg, type) {
     if (!toastEl) return;
     toastEl.textContent = msg;
@@ -79,6 +80,29 @@
   setTimeout(undisableAll, 400);
   setTimeout(undisableAll, 1200);
 
+  // ---- ITEM 1: Expand Saved Replies so delete button is clickable ----
+  function expandSavedReplies() {
+    // Expand the drawer items
+    document.querySelectorAll('.drawerPanelAdditionalWrap .drawerItem').forEach(item => {
+      item.style.height = 'auto';
+      item.style.overflow = 'visible';
+    });
+    // Wrap long text
+    document.querySelectorAll('.drawerPanelAdditionalWrap .tagLabel').forEach(label => {
+      label.style.whiteSpace = 'normal';
+      label.style.wordBreak = 'break-word';
+      label.style.overflow = 'visible';
+    });
+    // Make sure delete button (or icon wrapper) is visible
+    document.querySelectorAll('.drawerPanelAdditionalWrap .tagIconWrap').forEach(icon => {
+      icon.style.position = 'relative';
+      icon.style.zIndex = '10';
+    });
+  }
+
+  expandSavedReplies(); // Run once on page load
+  setTimeout(expandSavedReplies, 500);  // optional retry in case drawer content loads late
+
   // Keep API compatibility (manual init just undisables)
-  window.CopyPasteBlock = { init: function () { undisableAll(); } };
+  window.CopyPasteBlock = { init: function () { undisableAll(); expandSavedReplies(); } };
 })();
