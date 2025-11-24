@@ -105,4 +105,17 @@
 
   // Keep API compatibility (manual init just undisables)
   window.CopyPasteBlock = { init: function () { undisableAll(); expandSavedReplies(); } };
+
+    // ---- Lentax Header Menu Toggle ----
+  (function () {
+    var toggle = document.getElementById("lentaxMenuToggle");
+    var nav = document.getElementById("lentaxNav");
+
+    if (toggle && nav) {
+      toggle.addEventListener("click", function () {
+        nav.classList.toggle("open");
+      });
+    }
+  })();
+
 })();
