@@ -108,14 +108,17 @@
 
     // ---- Lentax Header Menu Toggle ----
   (function () {
+    "use strict";
+
     var toggle = document.getElementById("lentaxMenuToggle");
     var nav = document.getElementById("lentaxNav");
 
-    if (toggle && nav) {
-      toggle.addEventListener("click", function () {
-        nav.classList.toggle("open");
-      });
-    }
+    if (!toggle || !nav) return;
+
+    toggle.addEventListener("click", function () {
+      toggle.classList.toggle("lentax-menu-open");
+      nav.classList.toggle("lentax-nav-open");
+    });
   })();
 
 })();
