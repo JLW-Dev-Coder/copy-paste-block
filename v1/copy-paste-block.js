@@ -15,9 +15,10 @@
   }
 
   function initOne(container) {
-    var valueEl = container.querySelector(".copy-paste-block-passkey") || document.getElementById("passkey");
-    var btnEl   = container.querySelector(".copy-paste-block-btn")     || document.getElementById("copyBtn");
-    var toastEl = container.querySelector(".copy-paste-block-toast")   || document.getElementById("copyToast");
+    var memberEl = container.querySelector("#memberId");
+    var valueEl  = memberEl || container.querySelector(".copy-paste-block-passkey") || document.getElementById("passkey");
+    var btnEl    = container.querySelector(".copy-paste-block-btn") || document.getElementById("copyBtn");
+    var toastEl  = container.querySelector(".copy-paste-block-toast") || document.getElementById("copyToast");
     if (!btnEl || !valueEl) return;
 
     function getValue() { return (valueEl.textContent || "").trim(); }
@@ -25,29 +26,32 @@
     function doCopy() {
       var text = getValue();
       if (!looksResolved(text)) {
-        showToast(toastEl, "Code not available yet. Try again shortly.", "error");
+        showToast(toastEl, "ID not available yet. Try again shortly.", "error");
         return;
       }
 
       function fallback() {
         try {
           var ta = document.createElement("textarea");
-          ta.value = text; ta.setAttribute("readonly", "");
-          ta.style.position = "fixed"; ta.style.top = "-9999px";
+          ta.value = text;
+          ta.setAttribute("readonly", "");
+          ta.style.position = "fixed";
+          ta.style.top = "-9999px";
           document.body.appendChild(ta);
-          ta.select(); ta.setSelectionRange(0, ta.value.length);
+          ta.select();
+          ta.setSelectionRange(0, ta.value.length);
           document.execCommand("copy");
           document.body.removeChild(ta);
-          showToast(toastEl, "Code copied to clipboard!", "success");
+          showToast(toastEl, "Copied!", "success");
         } catch (e) {
-          window.prompt("Copy your code:", text);
+          window.prompt("Copy:", text);
           showToast(toastEl, "Copy manually from the prompt.", "error");
         }
       }
 
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(function () {
-          showToast(toastEl, "Code copied to clipboard!", "success");
+          showToast(toastEl, "Copied!", "success");
         }).catch(fallback);
       } else {
         fallback();
@@ -77,9 +81,8 @@
     initAll();
   }
 
-   window.CopyPasteBlock = { init: function (rootEl) { rootEl ? initOne(rootEl) : initAll(); } };
+  window.CopyPasteBlock = { init: function (rootEl) { rootEl ? initOne(rootEl) : initAll(); } };
 
-  // --- Stabilizer: re-init after SuiteDash re-renders ---
   (function () {
     function kick(root) {
       if (window.CopyPasteBlock) window.CopyPasteBlock.init(root || document);
@@ -88,13 +91,12 @@
     setTimeout(kick, 600);
     setTimeout(kick, 1500);
 
-    const root = document.querySelector('.copy-paste-block') || document;
-    const mo = new MutationObserver(() => kick(root));
+    var root = document.querySelector(".copy-paste-block") || document;
+    var mo = new MutationObserver(function () { kick(root); });
     mo.observe(root, { childList: true, subtree: true });
 
-    document.addEventListener('visibilitychange', () => {
+    document.addEventListener("visibilitychange", function () {
       if (!document.hidden) setTimeout(kick, 300);
     });
   })();
-
 })();
