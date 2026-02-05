@@ -100,25 +100,3 @@
     });
   })();
 })();
-
-/* FAQ (SuiteDash-safe): delegated capture click + aria sync */
-(function () {
-  "use strict";
-
-  function onClick(e) {
-    var btn = e.target && e.target.closest ? e.target.closest("[data-faq-btn]") : null;
-    if (!btn) return;
-
-    try { e.preventDefault(); } catch (x) {}
-    try { e.stopPropagation(); } catch (x) {}
-    try { if (e.stopImmediatePropagation) e.stopImmediatePropagation(); } catch (x) {}
-
-    var item = btn.closest("[data-faq-item]");
-    if (!item) return;
-
-    var open = item.classList.toggle("is-open");
-    try { btn.setAttribute("aria-expanded", open ? "true" : "false"); } catch (x) {}
-  }
-
-  document.addEventListener("click", onClick, true);
-})();
