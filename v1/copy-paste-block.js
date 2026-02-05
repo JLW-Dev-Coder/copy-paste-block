@@ -101,55 +101,38 @@
   })();
 })();
 
-/* FAQ (canonical; SuiteDash-safe): event delegation + aria sync + mutation re-kick */
+/* PROJECT DASHBAORD FAQ (canonical; SuiteDash-safe): event delegation + aria sync + mutation re-kick */
 (function () {
   "use strict";
 
-  function closest(el, selector) {
-    while (el && el !== document) {
-      if (el.matches && el.matches(selector)) return el;
-      el = el.parentNode;
-    }
-    return null;
-  }
+  function toggleFrom(target) {
+    var label = target.closest(".pd-faq2-label");
+    if (!label) return;
 
-  function setExpanded(btn, expanded) {
-    try { btn.setAttribute("aria-expanded", expanded ? "true" : "false"); } catch (e) {}
-  }
-
-  function handleToggle(target) {
-    var btn = closest(target, "[data-faq-toggle]");
-    if (!btn) return;
-
-    var item = closest(btn, "[data-faq]");
+    var item = label.closest(".pd-faq2-item");
     if (!item) return;
 
-    var isOpen = item.classList.toggle("is-open");
-    setExpanded(btn, isOpen);
+    item.classList.toggle("is-open");
   }
 
   function bindOnce() {
-    if (document.__pdFaqBound) return;
-    document.__pdFaqBound = true;
+    if (document.__pdFaq2Bound) return;
+    document.__pdFaq2Bound = true;
 
     document.addEventListener("click", function (e) {
-      handleToggle(e.target);
+      toggleFrom(e.target);
     }, true);
   }
 
   function kick() {
     bindOnce();
-
-    var toggles = document.querySelectorAll("[data-faq-toggle]");
-    toggles.forEach(function (btn) {
-      var item = closest(btn, "[data-faq]");
-      if (!item) return;
-      setExpanded(btn, item.classList.contains("is-open"));
-    });
   }
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", kick);
-  else kick();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", kick);
+  } else {
+    kick();
+  }
 
   setTimeout(kick, 600);
   setTimeout(kick, 1500);
