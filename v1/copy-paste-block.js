@@ -101,41 +101,50 @@
   })();
 })();
 
+/* FAQ (SuiteDash-safe): event delegation + mutation re-kick */
 (function () {
   "use strict";
 
-  function initFAQ(root) {
-    var scope = root || document;
-    var items = scope.querySelectorAll("[data-faq]");
-
-    if (!items.length) return;
-
-    items.forEach(function (item) {
-      if (item.__faqBound) return;
-      item.__faqBound = true;
-
-      var toggle = item.querySelector("[data-faq-toggle]");
-      if (!toggle) return;
-
-      toggle.addEventListener("click", function () {
-        item.classList.toggle("is-open");
-      });
-    });
+  function closest(el, selector) {
+    while (el && el !== document) {
+      if (el.matches && el.matches(selector)) return el;
+      el = el.parentNode;
+    }
+    return null;
   }
 
-  function kickFAQ() {
-    initFAQ(document);
+  function toggleItemFrom(target) {
+    var toggle = closest(target, "[data-faq-toggle]");
+    if (!toggle) return;
+
+    var item = closest(toggle, "[data-faq]");
+    if (!item) return;
+
+    item.classList.toggle("is-open");
+  }
+
+  function bindOnce() {
+    if (document.__pdFaqBound) return;
+    document.__pdFaqBound = true;
+
+    document.addEventListener("click", function (e) {
+      toggleItemFrom(e.target);
+    }, true);
+  }
+
+  function kick() {
+    bindOnce();
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", kickFAQ);
+    document.addEventListener("DOMContentLoaded", kick);
   } else {
-    kickFAQ();
+    kick();
   }
 
-  setTimeout(kickFAQ, 600);
-  setTimeout(kickFAQ, 1500);
+  setTimeout(kick, 600);
+  setTimeout(kick, 1500);
 
-  var mo = new MutationObserver(kickFAQ);
+  var mo = new MutationObserver(kick);
   mo.observe(document.body, { childList: true, subtree: true });
 })();
