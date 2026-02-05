@@ -101,25 +101,24 @@
   })();
 })();
 
-/* FAQ (SuiteDash-safe): hard-bind + delegated capture + aria sync */
+/* FAQ (SuiteDash-safe): delegated capture click + aria sync */
 (function () {
   "use strict";
 
-  function toggle(e) {
-    var btn = e.target.closest("[data-faq-toggle]");
+  function onClick(e) {
+    var btn = e.target && e.target.closest ? e.target.closest("[data-faq-btn]") : null;
     if (!btn) return;
 
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+    try { e.preventDefault(); } catch (x) {}
+    try { e.stopPropagation(); } catch (x) {}
+    try { if (e.stopImmediatePropagation) e.stopImmediatePropagation(); } catch (x) {}
 
-    var item = btn.closest("[data-faq]");
+    var item = btn.closest("[data-faq-item]");
     if (!item) return;
 
     var open = item.classList.toggle("is-open");
-    btn.setAttribute("aria-expanded", open ? "true" : "false");
+    try { btn.setAttribute("aria-expanded", open ? "true" : "false"); } catch (x) {}
   }
 
-  document.addEventListener("click", toggle, true);
+  document.addEventListener("click", onClick, true);
 })();
-
