@@ -101,16 +101,7 @@
   })();
 })();
 
-/* PROJECT DASHBAORD FAQ (canonical; SuiteDash-safe): event delegation + aria sync + mutation re-kick */
-/* PROJECT DASHBOARD FAQ TOGGLE (SuiteDash-safe, no dependencies)
-   - Works with ANY of these triggers:
-     - .pd-faq2-label
-     - .pd-faq2-toggle
-     - [data-faq-toggle]
-   - Toggles closest:
-     - .pd-faq2-item
-     - [data-faq]
-*/
+/* FAQ (canonical; SuiteDash-safe): capture + pointerdown + aria sync */
 (function () {
   "use strict";
 
@@ -122,84 +113,67 @@
     return null;
   }
 
-  function setAria(btn, isOpen) {
-    try { btn.setAttribute("aria-expanded", isOpen ? "true" : "false"); } catch (e) {}
+  function setExpanded(btn, expanded) {
+    try {
+      btn.setAttribute("aria-expanded", expanded ? "true" : "false");
+    } catch (e) {}
   }
 
-  function getTrigger(target) {
-    return (
-      target.closest && (
-        target.closest(".pd-faq2-label") ||
-        target.closest(".pd-faq2-toggle") ||
-        target.closest("[data-faq-toggle]")
-      )
-    ) || null;
-  }
-
-  function getItem(trigger) {
-    return (
-      closest(trigger, ".pd-faq2-item") ||
-      closest(trigger, "[data-faq]") ||
-      null
-    );
-  }
-
-  function toggleFromTarget(target) {
-    var trigger = getTrigger(target);
-    if (!trigger) return;
-
-    var item = getItem(trigger);
+  function toggle(btn) {
+    var item = closest(btn, "[data-faq]");
     if (!item) return;
 
-    /* Prevent SuiteDash / browser from stealing the click */
-    try { if (typeof event !== "undefined") event.preventDefault(); } catch (e) {}
-
     var isOpen = item.classList.toggle("is-open");
-
-    /* aria sync */
-    if (trigger.matches && (trigger.matches(".pd-faq2-toggle") || trigger.matches("[data-faq-toggle]"))) {
-      setAria(trigger, isOpen);
-    } else {
-      var btn = item.querySelector(".pd-faq2-toggle,[data-faq-toggle]");
-      if (btn) setAria(btn, isOpen);
-    }
+    setExpanded(btn, isOpen);
   }
 
-  function bindOnce() {
-    if (document.__pdFaqAnyBound) return;
-    document.__pdFaqAnyBound = true;
+  function onActivate(e) {
+    var btn = closest(e.target, "[data-faq-toggle]");
+    if (!btn) return;
 
-    document.addEventListener("click", function (e) {
-      toggleFromTarget(e.target);
-    }, true);
+    /* prevent SD handlers from eating the event */
+    try { e.preventDefault(); } catch (e) {}
+    try { e.stopPropagation(); } catch (e) {}
+    try { if (e.stopImmediatePropagation) e.stopImmediatePropagation(); } catch (e) {}
 
-    document.addEventListener("keydown", function (e) {
-      if (e.key !== "Enter" && e.key !== " ") return;
-      var trigger = getTrigger(e.target);
-      if (!trigger) return;
-      e.preventDefault();
-      toggleFromTarget(e.target);
-    }, true);
+    toggle(btn);
   }
 
   function kick() {
-    bindOnce();
-
-    /* Make triggers clickable even if SD theme disables pointer events */
-    var triggers = document.querySelectorAll(".pd-faq2-label,.pd-faq2-toggle,[data-faq-toggle]");
-    triggers.forEach(function (t) {
-      try { t.style.pointerEvents = "auto"; } catch (e) {}
-      try { t.style.cursor = "pointer"; } catch (e) {}
+    /* sync aria on re-render */
+    var toggles = document.querySelectorAll("[data-faq-toggle]");
+    toggles.forEach(function (btn) {
+      var item = closest(btn, "[data-faq]");
+      if (!item) return;
+      setExpanded(btn, item.classList.contains("is-open"));
     });
   }
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", kick);
-  else kick();
+  function bindOnce() {
+    if (document.__pdFaqBound) return;
+    document.__pdFaqBound = true;
 
-  setTimeout(kick, 250);
-  setTimeout(kick, 800);
-  setTimeout(kick, 1600);
+    /* pointerdown catches before SD click handlers */
+    document.addEventListener("pointerdown", onActivate, true);
+    document.addEventListener("click", onActivate, true);
+  }
 
-  var mo = new MutationObserver(function () { kick(); });
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () {
+      bindOnce();
+      kick();
+    });
+  } else {
+    bindOnce();
+    kick();
+  }
+
+  setTimeout(kick, 600);
+  setTimeout(kick, 1500);
+
+  var mo = new MutationObserver(function () {
+    bindOnce();
+    kick();
+  });
   mo.observe(document.body, { childList: true, subtree: true });
 })();
