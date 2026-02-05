@@ -101,79 +101,87 @@
   })();
 })();
 
-/* FAQ (canonical; SuiteDash-safe): capture + pointerdown + aria sync */
+/* FAQ (SuiteDash-safe): hard-bind + delegated capture + aria sync */
 (function () {
   "use strict";
 
-  function closest(el, selector) {
+  var ROOT_SEL = "[data-faq]";
+  var BTN_SEL = "[data-faq-toggle]";
+
+  function getRoot(btn) {
+    if (!btn) return null;
+    if (btn.closest) return btn.closest(ROOT_SEL);
+    var el = btn;
     while (el && el !== document) {
-      if (el.matches && el.matches(selector)) return el;
+      if (el.matches && el.matches(ROOT_SEL)) return el;
       el = el.parentNode;
     }
     return null;
   }
 
-  function setExpanded(btn, expanded) {
-    try {
-      btn.setAttribute("aria-expanded", expanded ? "true" : "false");
-    } catch (e) {}
+  function setAria(btn, isOpen) {
+    try { btn.setAttribute("aria-expanded", isOpen ? "true" : "false"); } catch (e) {}
   }
 
-  function toggle(btn) {
-    var item = closest(btn, "[data-faq]");
-    if (!item) return;
+  function doToggle(btn) {
+    var root = getRoot(btn);
+    if (!root) return;
 
-    var isOpen = item.classList.toggle("is-open");
-    setExpanded(btn, isOpen);
+    var isOpen = root.classList.toggle("is-open");
+    setAria(btn, isOpen);
   }
 
-  function onActivate(e) {
-    var btn = closest(e.target, "[data-faq-toggle]");
+  function stop(e) {
+    try { e.preventDefault(); } catch (e2) {}
+    try { e.stopPropagation(); } catch (e2) {}
+    try { if (e.stopImmediatePropagation) e.stopImmediatePropagation(); } catch (e2) {}
+  }
+
+  function handler(e) {
+    var t = e.target;
+    var btn = (t && t.closest) ? t.closest(BTN_SEL) : null;
     if (!btn) return;
 
-    /* prevent SD handlers from eating the event */
-    try { e.preventDefault(); } catch (e) {}
-    try { e.stopPropagation(); } catch (e) {}
-    try { if (e.stopImmediatePropagation) e.stopImmediatePropagation(); } catch (e) {}
-
-    toggle(btn);
+    stop(e);
+    doToggle(btn);
   }
 
-  function kick() {
-    /* sync aria on re-render */
-    var toggles = document.querySelectorAll("[data-faq-toggle]");
-    toggles.forEach(function (btn) {
-      var item = closest(btn, "[data-faq]");
-      if (!item) return;
-      setExpanded(btn, item.classList.contains("is-open"));
-    });
+  function syncAria() {
+    var btns = document.querySelectorAll(BTN_SEL);
+    for (var i = 0; i < btns.length; i++) {
+      var btn = btns[i];
+      var root = getRoot(btn);
+      if (!root) continue;
+      setAria(btn, root.classList.contains("is-open"));
+    }
   }
 
-  function bindOnce() {
-    if (document.__pdFaqBound) return;
-    document.__pdFaqBound = true;
+  function bind() {
+    if (window.__pdFaq2Bound) return;
+    window.__pdFaq2Bound = true;
 
-    /* pointerdown catches before SD click handlers */
-    document.addEventListener("pointerdown", onActivate, true);
-    document.addEventListener("click", onActivate, true);
+    /* capture phase + non-passive so preventDefault sticks */
+    document.addEventListener("click", handler, { capture: true, passive: false });
+    document.addEventListener("mousedown", handler, { capture: true, passive: false });
+    document.addEventListener("touchend", handler, { capture: true, passive: false });
+    document.addEventListener("pointerup", handler, { capture: true, passive: false });
+  }
+
+  function boot() {
+    bind();
+    syncAria();
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", function () {
-      bindOnce();
-      kick();
-    });
+    document.addEventListener("DOMContentLoaded", boot);
   } else {
-    bindOnce();
-    kick();
+    boot();
   }
 
-  setTimeout(kick, 600);
-  setTimeout(kick, 1500);
+  /* SD re-renders blocks; resync */
+  setTimeout(boot, 250);
+  setTimeout(boot, 900);
+  setTimeout(boot, 1600);
 
-  var mo = new MutationObserver(function () {
-    bindOnce();
-    kick();
-  });
-  mo.observe(document.body, { childList: true, subtree: true });
+  new MutationObserver(function () { boot(); }).observe(document.body, { childList: true, subtree: true });
 })();
