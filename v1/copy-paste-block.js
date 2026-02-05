@@ -105,83 +105,21 @@
 (function () {
   "use strict";
 
-  var ROOT_SEL = "[data-faq]";
-  var BTN_SEL = "[data-faq-toggle]";
-
-  function getRoot(btn) {
-    if (!btn) return null;
-    if (btn.closest) return btn.closest(ROOT_SEL);
-    var el = btn;
-    while (el && el !== document) {
-      if (el.matches && el.matches(ROOT_SEL)) return el;
-      el = el.parentNode;
-    }
-    return null;
-  }
-
-  function setAria(btn, isOpen) {
-    try { btn.setAttribute("aria-expanded", isOpen ? "true" : "false"); } catch (e) {}
-  }
-
-  function doToggle(btn) {
-    var root = getRoot(btn);
-    if (!root) return;
-
-    var isOpen = root.classList.toggle("is-open");
-    setAria(btn, isOpen);
-  }
-
-  function stop(e) {
-    try { e.preventDefault(); } catch (e2) {}
-    try { e.stopPropagation(); } catch (e2) {}
-    try { if (e.stopImmediatePropagation) e.stopImmediatePropagation(); } catch (e2) {}
-  }
-
-  function handler(e) {
-    var t = e.target;
-    var btn = (t && t.closest) ? t.closest(BTN_SEL) : null;
+  function toggle(e) {
+    var btn = e.target.closest("[data-faq-toggle]");
     if (!btn) return;
 
-    stop(e);
-    doToggle(btn);
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+
+    var item = btn.closest("[data-faq]");
+    if (!item) return;
+
+    var open = item.classList.toggle("is-open");
+    btn.setAttribute("aria-expanded", open ? "true" : "false");
   }
 
-  function syncAria() {
-    var btns = document.querySelectorAll(BTN_SEL);
-    for (var i = 0; i < btns.length; i++) {
-      var btn = btns[i];
-      var root = getRoot(btn);
-      if (!root) continue;
-      setAria(btn, root.classList.contains("is-open"));
-    }
-  }
-
-  function bind() {
-    if (window.__pdFaq2Bound) return;
-    window.__pdFaq2Bound = true;
-
-    /* capture phase + non-passive so preventDefault sticks */
-    document.addEventListener("click", handler, { capture: true, passive: false });
-    document.addEventListener("mousedown", handler, { capture: true, passive: false });
-    document.addEventListener("touchend", handler, { capture: true, passive: false });
-    document.addEventListener("pointerup", handler, { capture: true, passive: false });
-  }
-
-  function boot() {
-    bind();
-    syncAria();
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", boot);
-  } else {
-    boot();
-  }
-
-  /* SD re-renders blocks; resync */
-  setTimeout(boot, 250);
-  setTimeout(boot, 900);
-  setTimeout(boot, 1600);
-
-  new MutationObserver(function () { boot(); }).observe(document.body, { childList: true, subtree: true });
+  document.addEventListener("click", toggle, true);
 })();
+
