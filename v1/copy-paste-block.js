@@ -100,3 +100,42 @@
     });
   })();
 })();
+
+(function () {
+  "use strict";
+
+  function initFAQ(root) {
+    var scope = root || document;
+    var items = scope.querySelectorAll("[data-faq]");
+
+    if (!items.length) return;
+
+    items.forEach(function (item) {
+      if (item.__faqBound) return;
+      item.__faqBound = true;
+
+      var toggle = item.querySelector("[data-faq-toggle]");
+      if (!toggle) return;
+
+      toggle.addEventListener("click", function () {
+        item.classList.toggle("is-open");
+      });
+    });
+  }
+
+  function kickFAQ() {
+    initFAQ(document);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", kickFAQ);
+  } else {
+    kickFAQ();
+  }
+
+  setTimeout(kickFAQ, 600);
+  setTimeout(kickFAQ, 1500);
+
+  var mo = new MutationObserver(kickFAQ);
+  mo.observe(document.body, { childList: true, subtree: true });
+})();
