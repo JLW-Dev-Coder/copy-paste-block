@@ -101,7 +101,7 @@
   })();
 })();
 
-/* FAQ (SuiteDash-safe): event delegation + mutation re-kick */
+/* FAQ (canonical; SuiteDash-safe): event delegation + aria sync + mutation re-kick */
 (function () {
   "use strict";
 
@@ -113,14 +113,19 @@
     return null;
   }
 
-  function toggleItemFrom(target) {
-    var toggle = closest(target, "[data-faq-toggle]");
-    if (!toggle) return;
+  function setExpanded(btn, expanded) {
+    try { btn.setAttribute("aria-expanded", expanded ? "true" : "false"); } catch (e) {}
+  }
 
-    var item = closest(toggle, "[data-faq]");
+  function handleToggle(target) {
+    var btn = closest(target, "[data-faq-toggle]");
+    if (!btn) return;
+
+    var item = closest(btn, "[data-faq]");
     if (!item) return;
 
-    item.classList.toggle("is-open");
+    var isOpen = item.classList.toggle("is-open");
+    setExpanded(btn, isOpen);
   }
 
   function bindOnce() {
@@ -128,19 +133,23 @@
     document.__pdFaqBound = true;
 
     document.addEventListener("click", function (e) {
-      toggleItemFrom(e.target);
+      handleToggle(e.target);
     }, true);
   }
 
   function kick() {
     bindOnce();
+
+    var toggles = document.querySelectorAll("[data-faq-toggle]");
+    toggles.forEach(function (btn) {
+      var item = closest(btn, "[data-faq]");
+      if (!item) return;
+      setExpanded(btn, item.classList.contains("is-open"));
+    });
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", kick);
-  } else {
-    kick();
-  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", kick);
+  else kick();
 
   setTimeout(kick, 600);
   setTimeout(kick, 1500);
